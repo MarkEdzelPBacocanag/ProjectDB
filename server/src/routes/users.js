@@ -61,7 +61,29 @@ router.get('/me', requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.user.sub).populate('staff');
     if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json({ id: user._id, username: user.username, role: user.role, staff: user.staff });
+  res.json({ id: user._id, username: user.username, role: user.role, staff: user.staff });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
+// Admin: update password for a staff user
+router.put('/staff/:staffId/password', requireAuth, async (req, res) => {
+  try {
+    const { staffId } = req.params;
+    const { newPassword } = req.body;
+    if (!newPassword || typeof newPassword !== 'string' || !newPassword.trim()) {
+      return res.status(400).json({ message: 'newPassword required' });
+    }
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin role required' });
+    }
+    const user = await User.findOne({ staff: staffId });
+    if (!user) return res.status(404).json({ message: 'Staff user not found' });
+    const hashed = await bcrypt.hash(newPassword, 10);
+    user.password = hashed;
+    await user.save();
+    res.json({ id: user._id, username: user.username, role: user.role });
   } catch (e) {
     res.status(500).json({ message: e.message });
   }

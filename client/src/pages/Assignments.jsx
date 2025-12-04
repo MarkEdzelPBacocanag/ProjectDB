@@ -22,7 +22,6 @@ export default function Assignments() {
   const [openCreate, setOpenCreate] = useState(false)
   const toast = useToast()
   useEffect(() => {
-    setLoading(true)
     Promise.all([API.assignments.list(), API.requests.list(), API.staff.list()])
       .then(([a, rq, st]) => { setItems(a); setRequests(rq); setStaff(st); setLoading(false) })
   }, [])
@@ -61,13 +60,14 @@ export default function Assignments() {
       <h2>Assignments</h2>
       {error && <div style={{ color: 'red' }}>{error}</div>}
       <div style={{ marginBottom: 8 }}>
-        <button onClick={() => setOpenCreate(true)} disabled={!token}>New Assignment</button>
+        {isAdmin && <button onClick={() => setOpenCreate(true)} disabled={!token}>New Assignment</button>}
       </div>
       <input placeholder="Search by resident/service/staff" value={q} onChange={(e) => setQ(e.target.value)} />
       {loading ? (
         <TableSkeleton rows={6} cols={5} />
       ) : items.filter((i) => {
           const r = (i.request?.resident?.name || '').toLowerCase()
+          const s = (i.request?.service?.serviceType || '').toLowerCase()
           const st = (i.staff?.name || '').toLowerCase()
           const qq = q.toLowerCase()
           return r.includes(qq) || s.includes(qq) || st.includes(qq)
@@ -82,12 +82,14 @@ export default function Assignments() {
             <th>Resident</th>
             <th>Staff</th>
             <th>Date Assigned</th>
+            <th>{isAdmin && 'Actions'}</th>
           </tr>
         </thead>
         <tbody>
           {items
             .filter((i) => {
               const r = (i.request?.resident?.name || '').toLowerCase()
+              const s = (i.request?.service?.serviceType || '').toLowerCase()
               const st = (i.staff?.name || '').toLowerCase()
               const qq = q.toLowerCase()
               return r.includes(qq) || s.includes(qq) || st.includes(qq)
@@ -98,7 +100,7 @@ export default function Assignments() {
                 <td>{i.request?.resident?.name}</td>
                 <td>{i.staff?.name}</td>
                 <td>{new Date(i.dateAssigned).toLocaleDateString()}</td>
-                <td>{isAdmin && <button onClick={() => removeItem(i._id)}>Delete</button>}</td>
+                <td>{isAdmin && <button onClick={() => removeItem(i._id)}>{isAdmin && 'Delete'}</button>}</td>
               </tr>
             ))}
         </tbody>
@@ -109,6 +111,7 @@ export default function Assignments() {
         <span>Page {page}</span>
         <button disabled={page * pageSize >= items.filter((i) => {
           const r = (i.request?.resident?.name || '').toLowerCase()
+          const s = (i.request?.service?.serviceType || '').toLowerCase()
           const st = (i.staff?.name || '').toLowerCase()
           const qq = q.toLowerCase()
           return r.includes(qq) || s.includes(qq) || st.includes(qq)

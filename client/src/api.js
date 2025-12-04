@@ -34,6 +34,12 @@ export const API = {
         token,
         body: { username, password, role: "staff", staffId },
       }),
+    updateStaffPassword: (token, staffId, newPassword) =>
+      req(`/users/staff/${staffId}/password`, {
+        method: "PUT",
+        token,
+        body: { newPassword },
+      }),
   },
   residents: {
     list: () => req("/residents"),

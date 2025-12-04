@@ -11,7 +11,6 @@ export default function Requests() {
   const [services, setServices] = useState([])
   const [residentId, setResidentId] = useState('')
   const [serviceIds, setServiceIds] = useState([])
-  const [status, setStatus] = useState('pending')
   const [q, setQ] = useState('')
   const [page, setPage] = useState(1)
   const pageSize = 10
@@ -25,8 +24,8 @@ export default function Requests() {
   const [openCreate, setOpenCreate] = useState(false)
   const [openEdit, setOpenEdit] = useState(false)
   const toast = useToast()
+  const STATUS_OPTIONS = ['approve', 'complete', 'cancel', 'reject']
   useEffect(() => {
-    setLoading(true)
     Promise.all([API.requests.list(), API.residents.list(), API.services.list()])
       .then(([rq, r, s]) => { setItems(rq); setResidents(r); setServices(s); setLoading(false) })
   }, [])
@@ -41,16 +40,11 @@ export default function Requests() {
       toast.push('Resident not found', 'error')
       return
     }
-    if (!status.trim()) {
-      toast.push('Status is required', 'error')
-      return
-    }
     try {
-      const created = await API.requests.create(token, { residentId, serviceIds, status })
+      const created = await API.requests.create(token, { residentId, serviceIds })
       setItems([created, ...items])
       setResidentId('')
       setServiceIds([])
-      setStatus('pending')
       setOpenCreate(false)
       toast.push('Request created', 'success')
     } catch (e) {
@@ -99,6 +93,7 @@ export default function Requests() {
   return (
     <div style={{ margin: 50 }}>
       <h2>Requests</h2>
+      {error && <div style={{ color: 'red' }}>{error}</div>}
       <div style={{ marginBottom: 8 }}>
         <button onClick={() => setOpenCreate(true)} disabled={!token}>New Request</button>
       </div>
@@ -141,11 +136,13 @@ export default function Requests() {
                 <td>{i.resident?.name}</td>
                 <td>{Array.isArray(i.services) && i.services.length > 0 ? i.services.map((s) => s.serviceType).join(', ') : i.service?.serviceType}</td>
                 <td>{new Date(i.dateRequested).toLocaleString()}</td>
-                <td>{editingId === i._id ? <input value={editStatus} onChange={(e) => setEditStatus(e.target.value)} /> : <span className={badgeClass(i.status)}>{i.status}</span>}</td>
+                <td><span className={badgeClass(i.status)}>{i.status}</span></td>
                 <td>
-                  {canEdit && <button onClick={() => startEdit(i)}>Edit</button>}
-                  {isAdmin && <button onClick={() => removeItem(i._id)}>Delete</button>}
-                </td>
+                  <tr>
+                    <td class="doublebutton">{canEdit && <button onClick={()=> startEdit(i)}>Edit</button>}</td>
+                    <td class="doublebutton">{isAdmin && <button onClick={()=> removeItem(i._id)}>Delete</button>}</td>
+                  </tr>
+                  </td>
               </tr>
             ))}
         </tbody>
@@ -183,7 +180,7 @@ export default function Requests() {
               </label>
             ))}
           </div>
-          <input placeholder="Status" value={status} onChange={(e) => setStatus(e.target.value)} />
+          
         </form>
       </Modal>
       <Modal open={openEdit} title="Edit Request" onClose={() => { setOpenEdit(false); setEditingId('') }} footer={<>
@@ -191,7 +188,14 @@ export default function Requests() {
         <button onClick={saveEdit} disabled={!token}>Save</button>
       </>}>
         <div style={{ display: 'grid', gap: 8 }}>
-          <input value={editStatus} onChange={(e) => setEditStatus(e.target.value)} />
+          <div style={{ display: 'grid', gap: 6 }}>
+            {STATUS_OPTIONS.map((opt) => (
+              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="checkbox" checked={editStatus === opt} onChange={() => setEditStatus(opt)} />
+                <span>{opt}</span>
+              </label>
+            ))}
+          </div>
         </div>
       </Modal>
     </div>
