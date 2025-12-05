@@ -17,6 +17,7 @@ export default function Dashboard() {
   }, [])
   return (
     <div  style={{ margin: 50 }}>
+      <h1 style={{margin:0, padding:0, textAlign: 'start'}}>Dashboard</h1>
       <div className="grid">
         <div className="card stat">
           <div className="card-title">Residents</div>

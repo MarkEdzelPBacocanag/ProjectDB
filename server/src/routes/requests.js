@@ -74,10 +74,19 @@ router.get("/:id", async (req, res) => {
 router.put(
   "/:id",
   requireAuth,
-  requireRole("admin", "staff"),
+  requireRole("staff", "admin"),
   async (req, res) => {
     try {
-      const item = await Request.findByIdAndUpdate(req.params.id, req.body, {
+      const allowed = ["pending", "in_progress", "completed"];
+      const payload = {};
+      if (typeof req.body.status === "string") {
+        const s = req.body.status.trim();
+        if (!allowed.includes(s)) {
+          return res.status(400).json({ message: "Invalid status" });
+        }
+        payload.status = s;
+      }
+      const item = await Request.findByIdAndUpdate(req.params.id, payload, {
         new: true,
       })
         .populate("resident")

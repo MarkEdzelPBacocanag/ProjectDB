@@ -40,6 +40,14 @@ export const API = {
         token,
         body: { newPassword },
       }),
+    deleteStaffLogin: (token, staffId) =>
+      req(`/users/staff/${staffId}`, { method: "DELETE", token }),
+    updateAdminPassword: (token, currentPassword, newPassword) =>
+      req(`/users/admin/password`, {
+        method: "PUT",
+        token,
+        body: { currentPassword, newPassword },
+      }),
   },
   residents: {
     list: () => req("/residents"),

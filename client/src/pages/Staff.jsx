@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { API } from '../api'
 import { useAuth } from '../auth'
 import Modal from '../components/Modal'
@@ -17,17 +18,23 @@ export default function StaffPage() {
   const [editForm, setEditForm] = useState({ name: '', role: '' })
   const [openCreate, setOpenCreate] = useState(false)
   const [openEdit, setOpenEdit] = useState(false)
-  const [openUser, setOpenUser] = useState(false)
-  const [selectedStaffId, setSelectedStaffId] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [openPassword, setOpenPassword] = useState(false)
-  const [passwordStaffId, setPasswordStaffId] = useState('')
   const [newPassword, setNewPassword] = useState('')
+  const [openAdminPassword, setOpenAdminPassword] = useState(false)
+  const [adminCurrentPassword, setAdminCurrentPassword] = useState('')
+  const [adminNewPassword, setAdminNewPassword] = useState('')
   const toast = useToast()
+  const location = useLocation()
   useEffect(() => {
     API.staff.list().then((data) => { setItems(data); setLoading(false) })
   }, [])
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('changePassword') && isAdmin && token) {
+      setOpenAdminPassword(true)
+    }
+  }, [location.search, isAdmin, token])
   const onCreate = async (e) => {
     e.preventDefault()
     setError('')
@@ -78,12 +85,6 @@ export default function StaffPage() {
       toast.push(e.message, 'error')
     }
   }
-  const startCreateLogin = (staff) => {
-    setSelectedStaffId(staff._id)
-    setUsername('')
-    setPassword('')
-    setOpenUser(true)
-  }
   const createLogin = async (e) => {
     e.preventDefault()
     if (!username.trim() || !password.trim()) {
@@ -91,18 +92,12 @@ export default function StaffPage() {
       return
     }
     try {
-      await API.users.registerStaff(token, { username, password, staffId: selectedStaffId })
-      setOpenUser(false)
+      await API.users.registerStaff(token, { username, password, staffId: editingId })
       toast.push('Staff login created', 'success')
     } catch (e) {
       setError(e.message)
       toast.push(e.message, 'error')
     }
-  }
-  const startEditPassword = (staff) => {
-    setPasswordStaffId(staff._id)
-    setNewPassword('')
-    setOpenPassword(true)
   }
   const savePassword = async () => {
     if (!newPassword.trim()) {
@@ -110,9 +105,33 @@ export default function StaffPage() {
       return
     }
     try {
-      await API.users.updateStaffPassword(token, passwordStaffId, newPassword)
-      setOpenPassword(false)
+      await API.users.updateStaffPassword(token, editingId, newPassword)
       toast.push('Password updated', 'success')
+    } catch (e) {
+      setError(e.message)
+      toast.push(e.message, 'error')
+    }
+  }
+  const deleteLogin = async () => {
+    try {
+      await API.users.deleteStaffLogin(token, editingId)
+      toast.push('Staff login deleted', 'success')
+    } catch (e) {
+      setError(e.message)
+      toast.push(e.message, 'error')
+    }
+  }
+  const saveAdminPassword = async () => {
+    if (!adminCurrentPassword.trim() || !adminNewPassword.trim()) {
+      toast.push('Current and new password are required', 'error')
+      return
+    }
+    try {
+      await API.users.updateAdminPassword(token, adminCurrentPassword, adminNewPassword)
+      setAdminCurrentPassword('')
+      setAdminNewPassword('')
+      setOpenAdminPassword(false)
+      toast.push('Admin password updated', 'success')
     } catch (e) {
       setError(e.message)
       toast.push(e.message, 'error')
@@ -120,9 +139,9 @@ export default function StaffPage() {
   }
   return (
     <div style={{ margin: 50 }}>
-      <h2>Staff</h2>
-      {error && <div style={{ color: 'red' }}>{error}</div>}
-      <div style={{ marginTop: 8 }}>
+      <h1 style={{margin:0, padding:0, textAlign:'start'}}>Staff</h1>
+      <div style={{ marginTop: 8, display:'flex', flexDirection:'row', justifyContent:'end'}}>
+        {isAdmin && <button onClick={() => setOpenAdminPassword(true)} disabled={!token} style={{marginRight:8}}>Change Password</button>}
         <button onClick={() => setOpenCreate(true)} disabled={!token}>New Staff</button>
       </div>
       {loading ? (
@@ -148,8 +167,6 @@ export default function StaffPage() {
               <td>
                 {isAdmin && <button style={{margin:5, padding:5}} onClick={() => startEdit(i)}>Edit</button>}
                 {isAdmin && <button style={{margin:5, padding:5}} onClick={() => removeItem(i._id)}>Delete</button>}
-                {isAdmin && <button style={{margin:5, padding:5}} onClick={() => startCreateLogin(i)}>Create Login</button>}
-                {isAdmin && <button style={{margin:5, padding:5}} onClick={() => startEditPassword(i)}>Edit Password</button>}
               </td>
             </tr>
           ))}
@@ -165,25 +182,17 @@ export default function StaffPage() {
           <input placeholder="Role" value={role} onChange={(e) => setRole(e.target.value)} />
         </form>
       </Modal>
-      <Modal open={openPassword} title="Edit Staff Password" onClose={() => setOpenPassword(false)} footer={<>
-        <button onClick={() => setOpenPassword(false)}>Cancel</button>
-        <button onClick={savePassword} disabled={!token}>Save</button>
+
+      <Modal open={openAdminPassword} title="Change Admin Password" onClose={() => setOpenAdminPassword(false)} footer={<>
+        <button onClick={() => setOpenAdminPassword(false)}>Cancel</button>
+        <button onClick={saveAdminPassword} disabled={!token || !isAdmin || !adminCurrentPassword.trim() || !adminNewPassword.trim()}>Save</button>
       </>}>
         <div style={{ display: 'grid', gap: 8 }}>
-          <div>For: {items.find((s) => s._id === passwordStaffId)?.name || ''}</div>
-          <input placeholder="New Password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+          <input placeholder="Current Password" type="password" value={adminCurrentPassword} onChange={(e) => setAdminCurrentPassword(e.target.value)} />
+          <input placeholder="New Password" type="password" value={adminNewPassword} onChange={(e) => setAdminNewPassword(e.target.value)} />
         </div>
       </Modal>
-      <Modal open={openUser} title="Create Staff Login" onClose={() => setOpenUser(false)} footer={<>
-        <button onClick={() => setOpenUser(false)}>Cancel</button>
-        <button onClick={createLogin} disabled={!token}>Create</button>
-      </>}>
-        <form onSubmit={createLogin} style={{ display: 'grid', gap: 8 }}>
-          <div>For: {items.find((s) => s._id === selectedStaffId)?.name || ''}</div>
-          <input placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-          <input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        </form>
-      </Modal>
+
       <Modal open={openEdit} title="Edit Staff" onClose={() => { setOpenEdit(false); setEditingId('') }} footer={<>
         <button onClick={() => { setOpenEdit(false); setEditingId('') }}>Cancel</button>
         <button onClick={saveEdit} disabled={!token}>Save</button>
@@ -191,6 +200,20 @@ export default function StaffPage() {
         <div style={{ display: 'grid', gap: 8 }}>
           <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
           <input value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value })} />
+          <div style={{ marginTop: 8, display: 'grid', gap: 8 }}>
+            <div style={{ display: 'grid', gap: 6 }}>
+              <input placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
+              <input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <button onClick={createLogin} disabled={!token || !editingId || !username.trim() || !password.trim()}>Create Login</button>
+            </div>
+            <div style={{ display: 'grid', gap: 6 }}>
+              <input placeholder="New Password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+              <button onClick={savePassword} disabled={!token || !editingId || !newPassword.trim()}>Save Password</button>
+            </div>
+            <div>
+              <button onClick={deleteLogin} disabled={!token || !editingId}>Delete Login</button>
+            </div>
+          </div>
         </div>
       </Modal>
     </div>

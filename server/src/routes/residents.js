@@ -35,10 +35,18 @@ router.put('/:id', requireAuth, requireRole('admin', 'staff'), async (req, res) 
 });
 
 router.delete('/:id', requireAuth, requireRole('admin'), async (req, res) => {
-  const item = await Resident.findByIdAndDelete(req.params.id);
-  if (!item) return res.status(404).json({ message: 'Not found' });
+  const resident = await Resident.findById(req.params.id);
+  if (!resident) return res.status(404).json({ message: 'Not found' });
+  const Request = require('../models/Request');
+  const Assignment = require('../models/Assignment');
+  const requests = await Request.find({ resident: resident._id }, { _id: 1 });
+  const reqIds = requests.map((r) => r._id);
+  if (reqIds.length > 0) {
+    await Assignment.deleteMany({ request: { $in: reqIds } });
+    await Request.deleteMany({ _id: { $in: reqIds } });
+  }
+  await Resident.findByIdAndDelete(resident._id);
   res.status(204).end();
 });
 
 module.exports = router;
-

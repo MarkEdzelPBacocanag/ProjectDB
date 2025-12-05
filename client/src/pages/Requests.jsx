@@ -17,14 +17,14 @@ export default function Requests() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const { token, user } = useAuth()
-  const canEdit = !!user && (user.role === 'admin' || user.role === 'staff')
+  const canEdit = !!user && (user.role === 'staff' || user.role === 'admin')
   const isAdmin = !!user && user.role === 'admin'
   const [editingId, setEditingId] = useState('')
   const [editStatus, setEditStatus] = useState('')
   const [openCreate, setOpenCreate] = useState(false)
   const [openEdit, setOpenEdit] = useState(false)
   const toast = useToast()
-  const STATUS_OPTIONS = ['approve', 'complete', 'cancel', 'reject']
+  const STATUS_OPTIONS = ['pending', 'in_progress', 'completed']
   useEffect(() => {
     Promise.all([API.requests.list(), API.residents.list(), API.services.list()])
       .then(([rq, r, s]) => { setItems(rq); setResidents(r); setServices(s); setLoading(false) })
@@ -64,7 +64,11 @@ export default function Requests() {
     }
     try {
       const updated = await API.requests.update(token, editingId, { status: editStatus })
-      setItems(items.map((it) => (it._id === editingId ? updated : it)))
+      if ((updated.status || '').toLowerCase() === 'completed') {
+        setItems(items.filter((it) => it._id !== editingId))
+      } else {
+        setItems(items.map((it) => (it._id === editingId ? updated : it)))
+      }
       setEditingId('')
       setOpenEdit(false)
       toast.push('Request updated', 'success')
@@ -85,19 +89,18 @@ export default function Requests() {
   }
   const badgeClass = (val) => {
     const v = (val || '').toLowerCase()
-    if (v.includes('pending')) return 'badge gray'
-    if (v.includes('approve') || v.includes('complete')) return 'badge green'
-    if (v.includes('cancel') || v.includes('reject')) return 'badge red'
-    return 'badge yellow'
+    if (v === 'pending') return 'badge gray'
+    if (v === 'in_progress') return 'badge yellow'
+    if (v === 'completed') return 'badge green'
+    return 'badge gray'
   }
   return (
     <div style={{ margin: 50 }}>
-      <h2>Requests</h2>
-      {error && <div style={{ color: 'red' }}>{error}</div>}
-      <div style={{ marginBottom: 8 }}>
+      <h1 style={{margin:0, padding:0, textAlign:'start'}}>Requests</h1>
+      <div style={{ marginBottom: 8, display:'flex', flexDirection:'row', justifyContent:'end', gap: 8}}>
+        <input placeholder="Search by resident/service" value={q} onChange={(e) => setQ(e.target.value)} />
         <button onClick={() => setOpenCreate(true)} disabled={!token}>New Request</button>
       </div>
-      <input placeholder="Search by resident/service" value={q} onChange={(e) => setQ(e.target.value)} />
       {loading ? (
         <TableSkeleton rows={6} cols={5} />
       ) : items.filter((i) => {
@@ -105,7 +108,8 @@ export default function Requests() {
           const s1 = (i.service?.serviceType || '').toLowerCase()
           const s2 = Array.isArray(i.services) ? i.services.map((x) => (x?.serviceType || '').toLowerCase()).join(' ') : ''
           const qq = q.toLowerCase()
-          return r.includes(qq) || s1.includes(qq) || s2.includes(qq)
+          const notCompleted = (i.status || '').toLowerCase() !== 'completed'
+          return notCompleted && (r.includes(qq) || s1.includes(qq) || s2.includes(qq))
         }).length === 0 ? (
         <div style={{ marginTop: 24, padding: 16, border: '1px dashed #e5e7eb', borderRadius: 8, color: '#6b7280' }}>
           No requests found. Use "New Request" to add the first record.
@@ -128,7 +132,8 @@ export default function Requests() {
               const s1 = (i.service?.serviceType || '').toLowerCase()
               const s2 = Array.isArray(i.services) ? i.services.map((x) => (x?.serviceType || '').toLowerCase()).join(' ') : ''
               const qq = q.toLowerCase()
-              return r.includes(qq) || s1.includes(qq) || s2.includes(qq)
+              const notCompleted = (i.status || '').toLowerCase() !== 'completed'
+              return notCompleted && (r.includes(qq) || s1.includes(qq) || s2.includes(qq))
             })
             .slice((page - 1) * pageSize, page * pageSize)
             .map((i) => (
@@ -136,13 +141,13 @@ export default function Requests() {
                 <td>{i.resident?.name}</td>
                 <td>{Array.isArray(i.services) && i.services.length > 0 ? i.services.map((s) => s.serviceType).join(', ') : i.service?.serviceType}</td>
                 <td>{new Date(i.dateRequested).toLocaleString()}</td>
-                <td><span className={badgeClass(i.status)}>{i.status}</span></td>
+                <td><span className={badgeClass(i.status)}>{i.status === 'in_progress' ? 'In Progress' : i.status.charAt(0).toUpperCase() + i.status.slice(1)}</span></td>
                 <td>
-                  <tr>
-                    <td class="doublebutton">{canEdit && <button onClick={()=> startEdit(i)}>Edit</button>}</td>
-                    <td class="doublebutton">{isAdmin && <button onClick={()=> removeItem(i._id)}>Delete</button>}</td>
-                  </tr>
-                  </td>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {canEdit && <button onClick={()=> startEdit(i)}>Edit</button>}
+                    {isAdmin && <button onClick={()=> removeItem(i._id)}>Delete</button>}
+                  </div>
+                </td>
               </tr>
             ))}
         </tbody>
@@ -153,9 +158,11 @@ export default function Requests() {
         <span>Page {page}</span>
         <button disabled={page * pageSize >= items.filter((i) => {
           const r = (i.resident?.name || '').toLowerCase()
-          const s = (i.service?.serviceType || '').toLowerCase()
+          const s1 = (i.service?.serviceType || '').toLowerCase()
+          const s2 = Array.isArray(i.services) ? i.services.map((x) => (x?.serviceType || '').toLowerCase()).join(' ') : ''
           const qq = q.toLowerCase()
-          return r.includes(qq) || s.includes(qq)
+          const notCompleted = (i.status || '').toLowerCase() !== 'completed'
+          return notCompleted && (r.includes(qq) || s1.includes(qq) || s2.includes(qq))
         }).length} onClick={() => setPage((p) => p + 1)}>Next</button>
       </div>
       <Modal open={openCreate} title="New Request" onClose={() => setOpenCreate(false)} footer={<>

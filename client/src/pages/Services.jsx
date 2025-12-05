@@ -22,7 +22,6 @@ export default function Services() {
   const [editingId, setEditingId] = useState('')
   const [editForm, setEditForm] = useState({ serviceType: '', description: '' })
   useEffect(() => {
-    setLoading(true)
     API.services.list().then((data) => { setItems(data); setLoading(false) })
   }, [])
   const onCreate = async (e) => {
@@ -77,10 +76,9 @@ export default function Services() {
   }
   return (
     <div style={{ margin: 50 }}>
-      <h2>Services</h2>
-      <input placeholder="Search by type" value={q} onChange={(e) => setQ(e.target.value)} />
-      {error && <div style={{ color: 'red' }}>{error}</div>}
-      <div style={{ marginTop: 8 }}>
+      <h1 style={{margin:0, padding:0, textAlign:'start'}}>Services</h1>
+      <div style={{ display: 'flex', flexDirection: 'row', justifyContent:'flex-end',gap: 8 }}>
+      <input placeholder="Search by type" value={q} onChange={(e) => setQ(e.target.value)} />{error && <div style={{ color: 'red' }}>{error}</div>}
         <button onClick={() => setOpenCreate(true)} disabled={!isAdmin}>New Service</button>
       </div>
       {loading ? (
@@ -95,7 +93,7 @@ export default function Services() {
           <tr>
             <th>Type</th>
             <th>Description</th>
-            <th>Actions</th>
+            {isAdmin && <th>Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -106,14 +104,16 @@ export default function Services() {
               <tr key={i._id}>
                 <td>{i.serviceType}</td>
                 <td>{i.description}</td>
-                <td>
-                  <div>
-                    <tr>
-                      <td class="doublebutton">{isAdmin && <button onClick={() => startEdit(i)}>Edit</button>}</td>
-                      <td class="doublebutton"> {isAdmin && <button onClick={() => removeItem(i._id)}>Delete</button>}</td>
-                    </tr>
-                  </div>
-                </td>
+                {isAdmin && (
+                  <td>
+                    <div>
+                      <tr>
+                        <td class="doublebutton">{isAdmin && <button onClick={() => startEdit(i)}>Edit</button>}</td>
+                        <td class="doublebutton"> {isAdmin && <button onClick={() => removeItem(i._id)}>Delete</button>}</td>
+                      </tr>
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
         </tbody>

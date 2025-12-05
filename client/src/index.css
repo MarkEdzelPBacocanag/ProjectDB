@@ -25,10 +25,10 @@ body { margin: 0; }
 
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 150px 1fr; grid-template-rows: 64px 1fr; }
 .topbar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; color: #fff; background: linear-gradient(90deg, var(--blue), var(--purple)); }
-.brand { font-weight: 700; letter-spacing: 0.3px; }
+.brand { padding-left: 16px;font-weight: 800; letter-spacing: 0.6px; font-size: larger; }
 .topbar-right { display: flex; align-items: center; gap: 12px; }
 .search { border: none; padding: 8px 12px; border-radius: 8px; }
-.user-chip { background: rgba(255,255,255,0.2); padding: 6px 10px; border-radius: 999px; }
+.user-chip { background: rgba(255,255,255,0.2); padding: 6px 10px; }
 .sidebar { background: #fff; border-right: 1px solid var(--border); padding: 12px; }
 .navlink { display: block; padding: 10px 12px; color: var(--muted); text-decoration: none; border-radius: 8px; }
 .navlink.active, .navlink:hover { background: #eef2ff; color: var(--blue); }
@@ -87,7 +87,7 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
-.toast-container { position: fixed; top: 16px; right: 16px; display: grid; gap: 8px; z-index: 50; }
+.toast-container { position: fixed; top: 64px; right: 16px; display: grid; gap: 8px; z-index: 50; }
 .toast { padding: 10px 14px; border-radius: 8px; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
 .toast.info { background: var(--blue); }
 .toast.success { background: #10b981; }

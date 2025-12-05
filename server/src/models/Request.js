@@ -6,7 +6,13 @@ const RequestSchema = new mongoose.Schema(
     service: { type: mongoose.Schema.Types.ObjectId, ref: 'Service' },
     services: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Service' }],
     dateRequested: { type: Date, required: true, default: Date.now },
-    status: { type: String, required: true, trim: true },
+    status: {
+      type: String,
+      required: true,
+      trim: true,
+      enum: ['pending', 'in_progress', 'completed'],
+      default: 'pending',
+    },
   },
   { timestamps: true }
 );

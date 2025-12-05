@@ -21,6 +21,8 @@ router.get("/", async (req, res) => {
 router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
   try {
     const { requestId, staffId, dateAssigned } = req.body;
+    const existing = await Assignment.findOne({ request: requestId });
+    if (existing) return res.status(409).json({ message: "Request already assigned" });
     const request = await Request.findById(requestId);
     const staff = await Staff.findById(staffId);
     if (!request || !staff)

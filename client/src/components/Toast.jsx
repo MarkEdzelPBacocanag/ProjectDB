@@ -5,7 +5,7 @@ const ToastContext = createContext(null)
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
   useEffect(() => {
-    const timers = toasts.map((t) => setTimeout(() => setToasts((arr) => arr.filter((x) => x.id !== t.id)), t.duration || 3000))
+    const timers = toasts.map((t) => setTimeout(() => setToasts((arr) => arr.filter((x) => x.id !== t.id)), t.duration || 1000))
     return () => timers.forEach(clearTimeout)
   }, [toasts])
   const push = (message, type = 'info') => {

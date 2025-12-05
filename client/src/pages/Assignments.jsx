@@ -57,12 +57,11 @@ export default function Assignments() {
   }
   return (
     <div style={{ margin: 50}}>
-      <h2>Assignments</h2>
-      {error && <div style={{ color: 'red' }}>{error}</div>}
-      <div style={{ marginBottom: 8 }}>
+      <h1 style={{margin:0, padding:0, textAlign:'start'}}>Assignments</h1>
+      <div style={{ marginBottom: 8, display:'flex', flexDirection:'row', justifyContent:'end', gap: 8}}>
+        <input placeholder="Search by resident/service/staff" value={q} onChange={(e) => setQ(e.target.value)} />
         {isAdmin && <button onClick={() => setOpenCreate(true)} disabled={!token}>New Assignment</button>}
       </div>
-      <input placeholder="Search by resident/service/staff" value={q} onChange={(e) => setQ(e.target.value)} />
       {loading ? (
         <TableSkeleton rows={6} cols={5} />
       ) : items.filter((i) => {

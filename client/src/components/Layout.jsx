@@ -10,7 +10,6 @@ export default function Layout() {
       <header className="topbar" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, padding: 10 }}>
         <div className="brand">BarangayLink</div>
         <div className="topbar-right" style={{ position: 'relative' }}>
-          <input className="search" placeholder="Search" />
           <button className="user-chip" onClick={() => setMenuOpen((v) => !v)}>{user ? user.username : 'Guest'}</button>
           {menuOpen && user && (
             <div style={{ position: 'absolute', right: 0, top: 48, background: '#fff', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', minWidth: 160 }}>
@@ -21,7 +20,7 @@ export default function Layout() {
       </header>
       <aside style={{ marginTop: 60}} className="sidebar">
           <nav>
-            <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'navlink active' : 'navlink'}>Home</NavLink>
+            <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'navlink active' : 'navlink'}>Dashboard</NavLink>
             <NavLink to="/residents" className={({ isActive }) => isActive ? 'navlink active' : 'navlink'}>Residents</NavLink>
             <NavLink to="/services" className={({ isActive }) => isActive ? 'navlink active' : 'navlink'}>Services</NavLink>
             <NavLink to="/requests" className={({ isActive }) => isActive ? 'navlink active' : 'navlink'}>Requests</NavLink>

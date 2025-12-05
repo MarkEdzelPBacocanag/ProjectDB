@@ -11,6 +11,7 @@ export default function Residents() {
   const [page, setPage] = useState(1)
   const pageSize = 10
   const [name, setName] = useState('')
+  const [residentId, setResidentId] = useState('')
   const [address, setAddress] = useState('')
   const [birthDate, setBirthDate] = useState('')
   const [contactNumber, setContactNumber] = useState('')
@@ -23,7 +24,7 @@ export default function Residents() {
   const canEdit = !!user && (user.role === 'admin' || user.role === 'staff')
   const canDelete = !!user && user.role === 'admin'
   const [editingId, setEditingId] = useState('')
-  const [editForm, setEditForm] = useState({ name: '', address: '', birthDate: '', contactNumber: '' })
+  const [editForm, setEditForm] = useState({ residentId: '', name: '', address: '', birthDate: '', contactNumber: '' })
   useEffect(() => {
     setLoading(true)
     API.residents.list().then((data) => { setItems(data); setLoading(false) })
@@ -31,7 +32,7 @@ export default function Residents() {
   const onCreate = async (e) => {
     e.preventDefault()
     setError('')
-    if (!name.trim() || !address.trim() || !birthDate || !contactNumber.trim()) {
+    if (!residentId.trim() || !name.trim() || !address.trim() || !birthDate || !contactNumber.trim()) {
       toast.push('All resident fields are required', 'error')
       return
     }
@@ -40,8 +41,9 @@ export default function Residents() {
       return
     }
     try {
-      const item = await API.residents.create(token, { name, address, birthDate, contactNumber })
+      const item = await API.residents.create(token, { residentId, name, address, birthDate, contactNumber })
       setItems([item, ...items])
+      setResidentId('')
       setName('')
       setAddress('')
       setBirthDate('')
@@ -55,11 +57,11 @@ export default function Residents() {
   }
   const startEdit = (i) => {
     setEditingId(i._id)
-    setEditForm({ name: i.name, address: i.address, birthDate: i.birthDate?.slice(0, 10), contactNumber: i.contactNumber })
+    setEditForm({ residentId: i.residentId || '', name: i.name, address: i.address, birthDate: i.birthDate?.slice(0, 10), contactNumber: i.contactNumber })
     setOpenEdit(true)
   }
   const saveEdit = async () => {
-    if (!editForm.name.trim() || !editForm.address.trim() || !editForm.birthDate || !editForm.contactNumber.trim()) {
+    if (!editForm.residentId.trim() || !editForm.name.trim() || !editForm.address.trim() || !editForm.birthDate || !editForm.contactNumber.trim()) {
       toast.push('All resident fields are required', 'error')
       return
     }
@@ -90,10 +92,9 @@ export default function Residents() {
   }
   return (
     <div style={{ margin: 50 }}>
-      <h2>Residents</h2>
-      <input placeholder="Search by name" value={q} onChange={(e) => setQ(e.target.value)} />
-      {error && <div style={{ color: 'red' }}>{error}</div>}
-      <div style={{ marginTop: 8 }}>
+      <h1 style={{margin: 0 ,padding:0 ,textAlign:'left'}}>Residents</h1>
+      <div style={{ display: 'flex', flexDirection: 'row', justifyContent:'flex-end',gap: 8 }}>
+      <input placeholder="Search by name" value={q} onChange={(e) => setQ(e.target.value)} />{error && <div style={{ color: 'red' }}>{error}</div>}
         <button onClick={() => setOpenCreate(true)} disabled={!token}>New Resident</button>
       </div>
       {loading ? (
@@ -144,8 +145,9 @@ export default function Residents() {
       <Modal open={openCreate} title="New Resident" onClose={() => setOpenCreate(false)} footer={<>
         <button onClick={() => setOpenCreate(false)}>Cancel</button>
         <button onClick={(e) => onCreate(e)} disabled={!token}>Create</button>
-      </>}>
+      </>}> 
         <form onSubmit={onCreate} style={{  display: 'grid', gap: 8 }}>
+          <input placeholder="Resident ID" value={residentId} onChange={(e) => setResidentId(e.target.value)} />
           <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
           <input placeholder="Address" value={address} onChange={(e) => setAddress(e.target.value)} />
           <input placeholder="Birth Date" type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
@@ -155,8 +157,9 @@ export default function Residents() {
       <Modal open={openEdit} title="Edit Resident" onClose={() => { setOpenEdit(false); setEditingId('') }} footer={<>
         <button onClick={() => { setOpenEdit(false); setEditingId('') }}>Cancel</button>
         <button onClick={saveEdit} disabled={!token}>Save</button>
-      </>}>
+      </>}> 
         <div style={{ display: 'grid', gap: 8 }}>
+          <input value={editForm.residentId} onChange={(e) => setEditForm({ ...editForm, residentId: e.target.value })} />
           <input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
           <input value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
           <input type="date" value={editForm.birthDate} onChange={(e) => setEditForm({ ...editForm, birthDate: e.target.value })} />
